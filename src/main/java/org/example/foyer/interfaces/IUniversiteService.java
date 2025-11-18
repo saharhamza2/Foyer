@@ -12,6 +12,4 @@ public interface IUniversiteService {
     Universite afficherUniversiteSelonID(long idUniversite);
     Universite modifierUniversite(Universite universite);
     void supprimerUniversite(long idUniversite);
-    Universite affecterFoyerAUniversite (long idFoyer, String nomUniversite);
-    Universite desaffecterFoyerAUniversite (long idFoyer, String nomUniversite);
 }

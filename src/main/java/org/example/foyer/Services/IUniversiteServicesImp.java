@@ -43,17 +43,4 @@ public class IUniversiteServicesImp implements IUniversiteService {
         universiteRepository.deleteById(idUniversite);
     }
 
-    @Override
-    public Universite affecterFoyerAUniversite (long idFoyer, String nomUniversite){
-        Foyer foyer = FoyerRepository.findById(idFoyer)
-                .orElseThrow(() -> new RuntimeException("Foyer introuvable"));
-
-        Universite universite = universiteRepository.findEtudiantByCin(nomUniversite)
-                .orElseThrow(() -> new RuntimeException("Université introuvable"));
-
-        universite.setFoyer(foyer);
-
-        return universiteRepository.save(universite);
-    }
-
 }
