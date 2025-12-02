@@ -1,25 +1,62 @@
 pipeline {
   agent any
 
+  environment {
+    GIT_BRANCH = 'main'
+    REGISTRY = "docker.io"
+    IMAGE_NAME = "saharhamza/foyer-app"
+    DOCKER_CREDENTIALS = "docker-creds"
+  }
 
+  // webhook GitHub = déclenche automatiquement à chaque commit push
+  triggers { }
 
   stages {
-    stage('GIT') {
+    stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/saharhamza2/Foyer.git'
+        checkout scm
       }
     }
 
-    stage('Compile Stage') {
+    stage('Commit info') {
       steps {
-        // -B pour build non-interactif
-        sh 'mvn -B clean compile'
+        script {
+          COMMIT_SHORT = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          echo "Commit détecté : ${COMMIT_SHORT}"
+          env.COMMIT_SHORT = COMMIT_SHORT
+        }
+      }
+    }
+
+    stage('Maven build') {
+      steps {
+        sh 'mvn -B clean package -DskipTests'
+      }
+    }
+
+    stage('Docker build & push') {
+      steps {
+        script {
+          def tagBuild = "${env.REGISTRY}/${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
+          def tagCommit = "${env.REGISTRY}/${env.IMAGE_NAME}:${env.COMMIT_SHORT}"
+
+          withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            sh """
+              echo "$DOCKER_PASS" | docker login ${REGISTRY} --username "$DOCKER_USER" --password-stdin
+              docker build -t ${tagBuild} -t ${tagCommit} .
+              docker push ${tagBuild}
+              docker push ${tagCommit}
+              docker logout ${REGISTRY}
+            """
+          }
+        }
       }
     }
   }
 
   post {
-    success { echo 'Compile succeeded' }
-    failure { echo 'Compile failed' }
+    success {
+      echo "Image poussée : ${env.IMAGE_NAME}:${env.BUILD_NUMBER} et ${env.COMMIT_SHORT}"
+    }
   }
 }
