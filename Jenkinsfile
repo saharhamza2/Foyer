@@ -2,61 +2,83 @@ pipeline {
   agent any
 
   environment {
-    GIT_BRANCH = 'main'
-    REGISTRY = "docker.io"
-    IMAGE_NAME = "saharhamza/foyer-app"
-    DOCKER_CREDENTIALS = "docker-creds"
+    DOCKER_CREDENTIALS_ID = 'docker-creds'
+    DOCKER_REPO = 'saharhamza/alpine'
+    DOCKER_TAG = '1.0.0'
   }
 
-  // webhook GitHub = déclenche automatiquement à chaque commit push
-  triggers { }
+  tools {
+    maven 'M2_HOME'
+    jdk 'JAVA_HOME'
+  }
 
   stages {
     stage('Checkout') {
       steps {
         checkout scm
-      }
-    }
-
-    stage('Commit info') {
-      steps {
         script {
-          COMMIT_SHORT = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-          echo "Commit détecté : ${COMMIT_SHORT}"
-          env.COMMIT_SHORT = COMMIT_SHORT
+          GIT_COMMIT_SHORT = sh(returnStdout: true, script: "git rev-parse --short HEAD").trim()
+          env.GIT_COMMIT_SHORT = GIT_COMMIT_SHORT
+          echo "Commit short: ${GIT_COMMIT_SHORT}"
         }
       }
     }
 
-    stage('Maven build') {
+    stage('Build & Test - Maven') {
       steps {
-        sh 'mvn -B clean package -DskipTests'
+        echo "Lancement du build Maven..."
+        sh "mvn -B clean compile"
+      }
+      post {
+        failure {
+          echo "Build Maven failed — arrête le pipeline."
+        }
       }
     }
 
-    stage('Docker build & push') {
+    stage('Build Docker Image') {
       steps {
         script {
-          def tagBuild = "${env.REGISTRY}/${env.IMAGE_NAME}:${env.BUILD_NUMBER}"
-          def tagCommit = "${env.REGISTRY}/${env.IMAGE_NAME}:${env.COMMIT_SHORT}"
+          IMAGE_TAG_LATEST = "${env.DOCKER_REPO}:${env.DOCKER_TAG}"
+          IMAGE_TAG_COMMIT = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${env.GIT_COMMIT_SHORT}"
+          echo "Build docker image ${IMAGE_TAG_LATEST} and ${IMAGE_TAG_COMMIT}"
+          sh "docker build -f /home/sahar/docker/Dockerfile -t ${IMAGE_TAG_LATEST} -t ${IMAGE_TAG_COMMIT} ."
+        }
+      }
+    }
 
-          withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            sh """
-              echo "$DOCKER_PASS" | docker login ${REGISTRY} --username "$DOCKER_USER" --password-stdin
-              docker build -t ${tagBuild} -t ${tagCommit} .
-              docker push ${tagBuild}
-              docker push ${tagCommit}
-              docker logout ${REGISTRY}
-            """
+    stage('Build & Push Docker (CLI)') {
+      steps {
+        script {
+          def shortSha = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          def image = "${env.DOCKER_REPO}:${env.DOCKER_TAG}"
+          def imageCommit = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${shortSha}"
+
+          sh "docker build -f /home/sahar/docker/Dockerfile -t ${image} -t ${imageCommit} ."
+
+          withCredentials([usernamePassword(credentialsId: 'docker-creds',
+                                            usernameVariable: 'saharhamza',
+                                            passwordVariable: 'Sahar123*')]) {
+
+            sh 'echo "Zimbabwe17*" | docker login -u saharhamza --password-stdin'
+
+            sh "docker push ${image}"
+            sh "docker push ${imageCommit}"
+
+            sh 'docker logout || true'
           }
         }
       }
     }
+
   }
 
   post {
     success {
-      echo "Image poussée : ${env.IMAGE_NAME}:${env.BUILD_NUMBER} et ${env.COMMIT_SHORT}"
+      echo "Pipeline terminé avec succès — image poussée : ${DOCKER_REPO}:${DOCKER_TAG}"
     }
-  }
+    failure {
+      echo "Pipeline échoué. Vérifie les logs."
+    }
+  }
 }
