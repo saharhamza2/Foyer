@@ -13,6 +13,7 @@ pipeline {
     jdk 'JAVA_HOME'
   }
 
+
   stages {
     stage('Checkout') {
       steps {
