@@ -42,7 +42,7 @@ pipeline {
           IMAGE_TAG_LATEST = "${env.DOCKER_REPO}:${env.DOCKER_TAG}"
           IMAGE_TAG_COMMIT = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${env.GIT_COMMIT_SHORT}"
           echo "Build docker image ${IMAGE_TAG_LATEST} and ${IMAGE_TAG_COMMIT}"
-          sh "docker build -f /home/vboxuser/docker/Dockerfile -t ${IMAGE_TAG_LATEST} -t ${IMAGE_TAG_COMMIT} ."
+          sh "docker build -f /home/vboxuser/docker/DockerFile -t ${IMAGE_TAG_LATEST} -t ${IMAGE_TAG_COMMIT} ."
         }
       }
     }
@@ -54,7 +54,7 @@ pipeline {
           def image = "${env.DOCKER_REPO}:${env.DOCKER_TAG}"
           def imageCommit = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${shortSha}"
 
-          sh "docker build -f /home/vboxuser/docker/Dockerfile -t ${image} -t ${imageCommit} ."
+          sh "docker build -f /home/vboxuser/docker/DockerFile -t ${image} -t ${imageCommit} ."
 
           withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
                                             usernameVariable: 'saharhamza',
