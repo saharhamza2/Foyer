@@ -54,7 +54,7 @@ pipeline {
           def shortSha = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
           def imageCommit = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${shortSha}"
 
-          sh "docker build -f /home/vboxuser/docker/DockerFile -t ${imageCommit} ."
+          sh "docker build -f /home/vboxuser/docker/Dockerfile -t ${imageCommit} ."
 
           withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
                                             usernameVariable: 'saharhamza',
