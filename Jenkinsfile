@@ -38,39 +38,7 @@ pipeline {
       }
     }
 
-    stage('Build Docker Image') {
-      steps {
-        script {
-                  IMAGE_TAG_COMMIT = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${env.GIT_COMMIT_SHORT}"
-          echo "Build docker image ${IMAGE_TAG_COMMIT}"
-          sh "docker build -f /home/vboxuser/docker/DockerFile -t ${IMAGE_TAG_COMMIT} ."
-        }
-      }
-    }
-
-    stage('Build & Push Docker (CLI)') {
-      steps {
-        script {
-          def shortSha = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-          def imageCommit = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${shortSha}"
-
-          sh "docker build -f /home/vboxuser/docker/Dockerfile -t ${imageCommit} ."
-
-          withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
-                                            usernameVariable: 'saharhamza',
-                                            passwordVariable: 'Sahar123*')]) {
-
-            sh 'echo "Docker&-*2024" | docker login -u saharhamza --password-stdin'
-
-            sh "docker push ${imageCommit}"
-
-            sh 'docker logout || true'
-          }
-        }
-      }
-    }
-  }
-
+    
   post {
     success {
       echo "Pipeline terminé avec succès — image poussée : ${DOCKER_REPO}:${DOCKER_TAG}"
