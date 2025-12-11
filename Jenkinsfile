@@ -42,7 +42,7 @@ pipeline {
         script {
                   IMAGE_TAG_COMMIT = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${env.GIT_COMMIT_SHORT}"
           echo "Build docker image ${IMAGE_TAG_COMMIT}"
-          bat "docker build-t ${IMAGE_TAG_COMMIT} ."
+          bat "docker build -t ${IMAGE_TAG_COMMIT} ."
         }
       }
     }
@@ -53,7 +53,7 @@ pipeline {
           def shortSha = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
           def imageCommit = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${shortSha}"
 
-          bat "docker build  -t ${imageCommit} ."
+          bat "docker build -t ${imageCommit} ."
 
           withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
                                             usernameVariable: 'saharhamza',
