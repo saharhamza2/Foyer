@@ -1,6 +1,10 @@
 pipeline {
   agent any
 
+  triggers {
+    githubPush()
+}
+  
   environment {
     DOCKER_CREDENTIALS_ID = 'docker-creds'
     DOCKER_REPO = 'saharhamza/alpine'
