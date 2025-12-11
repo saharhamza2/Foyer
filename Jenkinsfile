@@ -25,7 +25,7 @@ pipeline {
         }
       }
     }
-
+  
     stage('Build & Test - Maven') {
       steps {
         echo "Lancement du build Maven..."
@@ -38,7 +38,7 @@ pipeline {
       }
     }
 
-    
+  }   
   post {
     success {
       echo "Pipeline terminé avec succès — image poussée : ${DOCKER_REPO}:${DOCKER_TAG}"
