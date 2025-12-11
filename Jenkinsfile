@@ -54,7 +54,7 @@ pipeline {
                   bat "docker build -t ${IMAGE_TAG_COMMIT} ."
         
                   withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
-                                                    usernameVariable: 'saharhamza',
+                                                    usernameVariable: 'sahar',
                                                     passwordVariable: 'sahar123*')]) {
         
                     bat 'echo "sahar123*" | docker login -u saharhamza --password-stdin'
