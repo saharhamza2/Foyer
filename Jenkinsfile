@@ -24,7 +24,7 @@ pipeline {
       steps {
         script {
           // Récupère le short SHA proprement (sans afficher la commande)
-          def shortShaRaw = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          def shortShaRaw = bat(returnStdout: true, script: '@git rev-parse --short HEAD').trim()
           def shortSha = shortShaRaw.tokenize()[0]   // protection si des retours bizarres
           env.GIT_COMMIT_SHORT = shortSha
           echo "Commit short = ${shortSha}"
