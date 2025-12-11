@@ -18,7 +18,7 @@ pipeline {
     stage('Build & Test - Maven') {
       steps {
         echo "Lancement du build Maven..."
-        sh "mvn -B clean compile"
+        bat "mvn -B clean compile"
       }
     }
   }  
