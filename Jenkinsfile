@@ -17,10 +17,17 @@ pipeline {
     stage('Checkout') {
       steps {
         checkout scm
+      }
+    }
+
+     stage('Get short SHA') {
+      steps {
         script {
-          GIT_COMMIT_SHORT = bat(returnStdout: true, script: "git rev-parse --short HEAD").trim()
-          env.GIT_COMMIT_SHORT = GIT_COMMIT_SHORT
-          echo "Commit short: ${GIT_COMMIT_SHORT}"
+          // Récupère le short SHA proprement (sans afficher la commande)
+          def shortShaRaw = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          def shortSha = shortShaRaw.tokenize()[0]   // protection si des retours bizarres
+          env.GIT_COMMIT_SHORT = shortSha
+          echo "Commit short = ${shortSha}"
         }
       }
     }
@@ -40,34 +47,27 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-                  IMAGE_TAG_COMMIT = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${env.GIT_COMMIT_SHORT}"
-          echo "Build docker image ${IMAGE_TAG_COMMIT}"
-          bat "docker build -t ${IMAGE_TAG_COMMIT} ."
-        }
-      }
-    }
+                  def IMAGE_TAG_COMMIT = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${env.GIT_COMMIT_SHORT}"
+                  def imageLatest = "${env.DOCKER_REPO}:latest"
+                  
+                  echo "Building docker image..."
+                  bat "docker build -t ${IMAGE_TAG_COMMIT} ."
+        
+                  withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
+                                                    usernameVariable: 'saharhamza',
+                                                    passwordVariable: 'sahar123*')]) {
+        
+                    bat 'echo "Docker&-*2024" | docker login -u saharhamza --password-stdin'
 
-    stage('Build & Push Docker (CLI)') {
-      steps {
-        script {
-          def shortSha = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-          def imageCommit = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${shortSha}"
-
-          bat "docker build -t ${imageCommit} ."
-
-          withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
-                                            usernameVariable: 'saharhamza',
-                                            passwordVariable: 'sahar123*')]) {
-
-            bat 'echo "Docker&-*2024" | docker login -u saharhamza --password-stdin'
-
-            bat "docker push ${imageCommit}"
-
-            bat 'docker logout || true'
+                    bat "docker tag ${IMAGE_TAG_COMMIT} ${imageLatest}
+                    
+                    bat "docker push ${IMAGE_TAG_COMMIT}"
+        
+                    bat 'docker logout || true'
+                   }  
+              }
           }
-        }
       }
-    }
   }
 
   post {
