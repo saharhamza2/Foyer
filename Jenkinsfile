@@ -14,7 +14,6 @@ pipeline {
         git branch:'main', url:'https://github.com/saharhamza2/Foyer.git'
         }
       }
-    }
   
     stage('Build & Test - Maven') {
       steps {
@@ -22,8 +21,8 @@ pipeline {
         sh "mvn -B clean compile"
       }
     }
+  }  
 
-  }   
   post {
     success {
       echo "Pipeline terminé avec succès"
