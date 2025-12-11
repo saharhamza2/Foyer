@@ -78,3 +78,4 @@ pipeline {
       echo "Pipeline échoué. Vérifie les logs."
     }
    }
+}
