@@ -51,7 +51,7 @@ pipeline {
                   def imageLatest = "${env.DOCKER_REPO}:latest"
                   
                   echo "Building docker image..."
-                  bat "docker build -t ${IMAGE_TAG_COMMIT} ."
+                  bat "docker build --compress -t ${IMAGE_TAG_COMMIT} ."
         
                   withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
                                                     usernameVariable: 'saharhamza',
