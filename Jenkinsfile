@@ -1,34 +1,35 @@
-
 pipeline {
-  agent any
+    agent any
 
-  tools {
-    maven 'M2_HOME'
-    jdk 'JAVA_HOME'
-  }
+    stages {
 
-
-  stages {
-    stage('git') {
-      steps {
-        git branch:'main', url:'https://github.com/saharhamza2/Foyer.git'
+        stage('Clone projet') {
+            steps {
+                git branch: 'main', url: 'https://github.com/saharhamza2/Foyer.git'
+            }
         }
-      }
-  
-    stage('Build & Test - Maven') {
-      steps {
-        echo "Lancement du build Maven..."
-        bat "mvn -B clean compile"
-      }
-    }
-  }  
 
-  post {
-    success {
-      echo "Pipeline terminé avec succès"
+        stage('Build Docker image') {
+            steps {
+                echo "Construction de l'image Docker..."
+                bat 'docker build -t foyer-app .'
+            }
+        }
+
+        stage('Run container') {
+            steps {
+                echo "Lancement du container Docker..."
+                bat 'docker run --rm foyer-app'
+            }
+        }
     }
-    failure {
-      echo "Pipeline échoué. Vérifie les logs."
+
+    post {
+        success {
+            echo "Pipeline Docker terminé avec succès !"
+        }
+        failure {
+            echo "Le pipeline a échoué."
+        }
     }
-   }
 }
