@@ -59,7 +59,7 @@ pipeline {
         
                     bat 'echo "Docker&-*2024" | docker login -u saharhamza --password-stdin'
 
-                    bat "docker tag ${IMAGE_TAG_COMMIT} ${imageLatest}
+                    bat "docker tag ${IMAGE_TAG_COMMIT} ${imageLatest}"
                     
                     bat "docker push ${IMAGE_TAG_COMMIT}"
         
