@@ -57,7 +57,7 @@ pipeline {
                                                     usernameVariable: 'saharhamza',
                                                     passwordVariable: 'sahar123*')]) {
         
-                    bat 'echo "Docker&-*2024" | docker login -u saharhamza --password-stdin'
+                    bat 'echo "sahar123*" | docker login -u saharhamza --password-stdin'
 
                     bat "docker tag ${IMAGE_TAG_COMMIT} ${imageLatest}"
                     
