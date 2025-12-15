@@ -2,7 +2,7 @@ pipeline {
   agent any
   
   environment {
-    DOCKER_CREDENTIALS_ID = 'docker-creds'
+    DOCKER_CREDENTIALS_ID = 'docker-hub-creds'
     DOCKER_REPO = 'saharhamza/alpine'
     DOCKER_TAG = '1.0.0'
   }
