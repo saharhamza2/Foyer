@@ -1,12 +1,8 @@
 pipeline {
   agent any
-
-  triggers {
-    githubPush()
-}
   
   environment {
-    DOCKER_CREDENTIALS_ID = 'docker-creds'
+    DOCKER_CREDENTIALS_ID = 'docker-hub-creds'
     DOCKER_REPO = 'saharhamza/alpine'
     DOCKER_TAG = '1.0.0'
   }
@@ -18,22 +14,23 @@ pipeline {
 
 
   stages {
-    stage('Checkou t') {
-      steps {
-        checkout scm
-      }
-    }
 
-     stage('Get short SHA') {
-      steps {
-        script {
-          // Récupère le short SHA proprement (sans afficher la commande)
-          def shortShaRaw = bat(returnStdout: true, script: '@git rev-parse --short HEAD').trim()
-          def shortSha = shortShaRaw.tokenize()[0]   // protection si des retours bizarres
-          env.GIT_COMMIT_SHORT = shortSha
-          echo "Commit short = ${shortSha}"
-        }
-      }
+   stage('Trigger Webhook') {
+            steps {
+                echo 'Webhook déclenché avec succès'
+            }
+        }	
+
+    stage('Checkout ') {
+     steps {
+                checkout scm
+                script {
+                    env.GIT_COMMIT_SHORT = env.GIT_COMMIT.take(7)
+                    env.IMAGE_TAG = "${DOCKER_REPO}:${DOCKER_TAG}-${GIT_COMMIT_SHORT}"
+                    echo "Image Docker : ${env.IMAGE_TAG}"
+                }
+            }
+
     }
 
     stage('Build & Test - Maven') {
@@ -48,28 +45,57 @@ pipeline {
       }
     }
 
+	stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    bat '''
+                    mvn -B sonar:sonar ^
+                      -Dsonar.projectKey=Foyer ^
+                      -Dsonar.projectName=Foyer ^
+                      -Dsonar.java.binaries=target/classes
+                    '''
+                }
+            }
+        }
+
+
     stage('Build Docker Image') {
-      steps {
-        script {
-                  def IMAGE_TAG_COMMIT = "${env.DOCKER_REPO}:${env.DOCKER_TAG}-${env.GIT_COMMIT_SHORT}"
-                  def imageLatest = "${env.DOCKER_REPO}:latest"
-                  
-                  echo "Building docker image..."
-                  bat "docker build --compress -t ${IMAGE_TAG_COMMIT} ."
-        
-                  withCredentials([usernamePassword(credentialsId: 'docker-hub-creds',
-                                                    usernameVariable: 'saharhamza',
-                                                    passwordVariable: 'sahar123*')]) {
-        
-                    bat 'echo sahar123* | docker login -u saharhamza --password-stdin'
-        
-                    bat "docker push ${IMAGE_TAG_COMMIT}"
-        
-                    bat 'docker logout || true'
-                   }  
-              }
-          }
-      }
+            steps {
+                echo 'Construction de l’image Docker'
+                bat 'docker build -t %IMAGE_TAG% .'
+            }
+        }
+
+      stage('Push Docker Image') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: DOCKER_CREDENTIALS_ID,
+                        usernameVariable: 'saharhamza',
+                        passwordVariable: 'sahar123*'
+                    )
+                ]) {
+                    bat '''
+                    echo sahar123* | docker login -u saharhamza --password-stdin
+                    docker push %IMAGE_TAG%
+                    docker logout
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'Déploiement sur Kubernetes'
+
+                bat '''
+                kubectl set image deployment/spring-app spring-app=%IMAGE_TAG% -n devops
+                kubectl rollout status deployment/spring-app -n devops
+                '''
+            }
+        }
+		
+	
   }
 
   post {
